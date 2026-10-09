@@ -1,4 +1,5 @@
 ###Структура:
+```
 backend/
 ├── app/
 │ ├── api/ # Слой API
@@ -15,6 +16,7 @@ backend/
 ├── db_init/
 │ └── seed.sql # Начальные данные (справочник растений)
 └── requirements.txt
+```
 ### Запуск
 1. Установить зависимости pip install -r requirements.txt
 2. Создать пустую базу с именем flowery_db
