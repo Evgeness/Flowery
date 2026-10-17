@@ -1,0 +1,13 @@
+/* src/index.css */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #f1f8e9; /* Наш светло-зеленый фон */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
