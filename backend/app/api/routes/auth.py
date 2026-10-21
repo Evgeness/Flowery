@@ -1,27 +1,35 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserResponse
+from app.core import security
 from app.crud import user as crud_user
-from app.core.security import verify_password, create_access_token
+from app.schemas.token import Token
+from app.schemas.user import UserCreate, UserResponse, UserLogin
 
 router = APIRouter()
 
-
 @router.post("/register", response_model=UserResponse)
-async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
-    existing_user = await crud_user.get_user_by_email(db, email=user_data.email)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Этот email уже зарегистрирован")
-    return await crud_user.create_user(db, user_data)
+async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+    user = await crud_user.get_user_by_email(db, email=user_in.email)
+    if user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return await crud_user.create_user(db, user_in)
 
-
-@router.post("/login")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
-    user = await crud_user.get_user_by_email(db, email=form_data.username)
-    if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Неверный email или пароль")
-
-    access_token = create_access_token(data={"sub": user.email})
-    return {"access_token": access_token, "token_type": "bearer"}
+# 1.ЭНДПОИНТ (JSON)
+@router.post("/login", response_model=Token)
+async def login_json(
+    user_in: UserLogin, 
+    db: AsyncSession = Depends(get_db)
+):
+    user = await crud_user.authenticate(db, email=user_in.email, password=user_in.password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    
+    return {
+        "access_token": security.create_access_token(user.id),
+        "refresh_token": security.create_refresh_token(user.id),
+        "token_type": "bearer",
+    }

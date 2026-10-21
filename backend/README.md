@@ -1,21 +1,28 @@
-###Структура:
-```
+## Структура проекта
+```text
 backend/
+├── alembic/                # Файлы миграций базы данных
 ├── app/
-│ ├── api/ # Слой API
-│ │ ├── routes/ # Эндпоинты (auth, plants)
-│ │ └── deps.py # Зависимости (проверка JWT-токена)
-│ ├── core/ # Настройки и безопасность
-│ │ ├── config.py # Чтение .env
-│ │ └── security.py # Хеширование паролей, создание токенов
-│ ├── crud/ # Операции с БД
-│ ├── db/ # Подключение к PostgreSQL
-│ ├── models/ # Модели SQLAlchemy (таблицы)
-│ ├── schemas/ # Pydantic-схемы (валидация данных)
-│ └── main.py # Точка входа
+│   ├── api/                # Слой API
+│   │   ├── routes/         # Эндпоинты (auth.py, plants.py)
+│   │   └── deps.py         # Зависимости (проверка JWT, ролей Админа/Юзера)
+│   ├── core/               # Настройки и безопасность
+│   │   ├── config.py       # Чтение .env (Pydantic Settings)
+│   │   └── security.py     # Хеширование паролей (bcrypt), создание JWT
+│   ├── crud/               # Асинхронные операции с БД (SQLAlchemy 2.0)
+│   │   ├── user.py
+│   │   └── plant.py
+│   ├── db/                 # Подключение к PostgreSQL
+│   │   ├── base.py         # Базовый класс Base
+│   │   └── session.py      # Асинхронный движок и сессии (asyncpg)
+│   ├── models/             # Модели SQLAlchemy (таблицы Users, Plants, UserPlants)
+│   ├── schemas/            # Pydantic-схемы (валидация данных)
+│   └── main.py             # Точка входа (FastAPI app)
 ├── db_init/
-│ └── seed.sql # Начальные данные (справочник растений)
-└── requirements.txt
+│   └── seed.sql            # Начальные данные (справочник растений)
+├── alembic.ini             # Конфигурация Alembic
+├── .env                    # Переменные окружения (не коммитится в Git)
+└── requirements.txt        # Зависимости
 ```
 ### Запуск
 1. Установить зависимости pip install -r requirements.txt

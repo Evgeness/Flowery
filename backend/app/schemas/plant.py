@@ -1,10 +1,21 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class PlantBase(BaseModel):
     name: str
     description: str
     watering_interval_days: int
+
+# НОВОЕ: Для создания растения админом
+class PlantCreate(PlantBase):
+    pass
+
+# НОВОЕ: Для обновления растения админом (все поля необязательны)
+class PlantUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    watering_interval_days: Optional[int] = None
 
 class PlantResponse(PlantBase):
     id: int
