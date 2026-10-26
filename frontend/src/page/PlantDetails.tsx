@@ -1,13 +1,31 @@
-import { Box, Typography, Paper, Button, Stack } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
+import { Box, Typography, Paper, Button, Stack } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 export default function PlantDetails() {
   const navigate = useNavigate();
 
   return (
-    <Box sx={{ p: 4, maxWidth: 800, margin: '0 auto' }}>
-      <Button startIcon={<ArrowBack />} onClick={() => navigate(-1)} sx={{ mb: 2 }}>
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 800, margin: '0 auto' }}>
+      
+      {/* ОБНОВЛЕННАЯ КНОПКА НАЗАД */}
+      <Button 
+        startIcon={<ArrowBack />} 
+        onClick={() => navigate(-1)} 
+        variant="contained" 
+        sx={{ 
+          mb: 3, 
+          bgcolor: '#40b140e3', 
+          color: '#ffffff',   
+          fontWeight: 'bold',
+          borderRadius: 2,
+          boxShadow: 2,       
+          '&:hover': {
+            bgcolor: '#85d627', 
+            boxShadow: 4,
+          }
+        }}
+      >
         Назад
       </Button>
       
@@ -17,7 +35,9 @@ export default function PlantDetails() {
         </Box>
         
         <Typography variant="h4" gutterBottom>Название растения</Typography>
-        <Typography variant="body1" paragraph color="text.secondary">
+        
+        {/* ИСПРАВЛЕНО: убрали paragraph, добавили sx={{ mb: 2 }} */}
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
           Краткое описание растения, его особенности и предпочтения.
         </Typography>
         
