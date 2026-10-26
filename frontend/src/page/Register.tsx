@@ -5,7 +5,8 @@ import AuthLayout from '../components/AuthLayout';
 export default function Register() {
   return (
     <AuthLayout>
-      <Stack spacing={2} textAlign="center">
+      {/* ИСПРАВЛЕНО: textAlign перенесен внутрь sx */}
+      <Stack spacing={2} sx={{ textAlign: 'center' }}>
         <Typography variant="h5">Создать аккаунт</Typography>
         <TextField label="Имя" fullWidth variant="outlined" />
         <TextField label="Почта" type="email" fullWidth variant="outlined" />

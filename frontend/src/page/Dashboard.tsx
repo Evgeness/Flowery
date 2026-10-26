@@ -8,7 +8,6 @@ export default function Dashboard() {
   const plants = [{ id: 1, name: 'Монстера' }]; 
 
   return (
-    // Убрали sx={{ minHeight: '100vh', bgcolor: '#77dd77' }}, так как фон теперь в Layout
     <Box>
       {plants.length === 0 ? (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', textAlign: 'center' }}>
