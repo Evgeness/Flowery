@@ -6,6 +6,7 @@ class PlantBase(BaseModel):
     name: str
     description: str
     watering_interval_days: int
+    image_url: str | None = None
 
 # НОВОЕ: Для создания растения админом
 class PlantCreate(PlantBase):
@@ -22,6 +23,7 @@ class PlantResponse(PlantBase):
 
     class Config:
         from_attributes = True
+
 
 class UserPlantCreate(BaseModel):
     plant_id: int

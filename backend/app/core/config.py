@@ -15,4 +15,11 @@ class Settings(BaseSettings):
     # Разрешаем Pydantic игнорировать любые другие переменные в .env
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    # MinIO
+    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_BUCKET_NAME: str = "flowery-images"
+    MINIO_SECURE: bool = False
+
 settings = Settings()

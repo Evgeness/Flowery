@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
-from datetime import datetime, timedelta
+import io
+import uuid
 
 from app.db.session import get_db
-# Добавляем зависимость для проверки прав админа
 from app.api.deps import get_current_user, get_current_admin 
 from app.schemas.plant import (
     PlantResponse, 
@@ -15,6 +16,11 @@ from app.schemas.plant import (
 )
 from app.crud import plant as crud_plant
 from app.models.user import User
+from app.models.plant import Plant # <-- Добавили импорт модели Plant
+
+# Импорты для MinIO
+from app.core.minio_client import minio_client
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -80,8 +86,6 @@ async def water_my_plant(
     Отметить растение как политое. 
     Обновляет last_watered_at и рассчитывает новую дату next_watering_at.
     """
-    # Здесь мы вызываем CRUD-функцию, которая найдет растение пользователя,
-    # обновит дату полива и прибавит интервал.
     updated_plant = await crud_plant.water_user_plant(
         db, 
         user_id=current_user.id, 
@@ -100,10 +104,9 @@ async def water_my_plant(
 async def create_plant(
     plant_in: PlantCreate,
     db: AsyncSession = Depends(get_db),
-    current_admin: User = Depends(get_current_admin) # <-- Защита!
+    current_admin: User = Depends(get_current_admin)
 ):
     """Добавить новое растение в общий каталог (Только Админ)."""
-    # Проверяем, нет ли уже растения с таким именем
     existing_plant = await crud_plant.get_plant_by_name(db, name=plant_in.name)
     if existing_plant:
         raise HTTPException(status_code=400, detail="Растение с таким названием уже существует")
@@ -135,3 +138,52 @@ async def delete_plant(
     if not deleted:
         raise HTTPException(status_code=404, detail="Растение не найдено")
     return {"message": "Растение удалено из каталога"}
+
+
+# ==========================================
+# НОВЫЙ БЛОК: ЗАГРУЗКА КАРТИНКИ РАСТЕНИЯ (MinIO)
+# ==========================================
+
+@router.post("/plants/{plant_id}/image", response_model=PlantResponse)
+async def upload_plant_image(
+    plant_id: int,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_admin: User = Depends(get_current_admin)
+):
+    """
+    Загрузить картинку для растения в MinIO.
+    Доступно только администратору.
+    """
+    # 1. Проверяем, существует ли растение в БД
+    result = await db.execute(select(Plant).where(Plant.id == plant_id))
+    plant = result.scalar_one_or_none()
+    if not plant:
+        raise HTTPException(status_code=404, detail="Растение не найдено")
+
+    # 2. Генерируем уникальное имя файла (чтобы не было конфликтов)
+    file_extension = file.filename.split(".")[-1] if file.filename else "jpg"
+    object_name = f"{uuid.uuid4()}.{file_extension}"
+    
+    # 3. Читаем файл и загружаем в MinIO
+    contents = await file.read()
+    try:
+        minio_client.put_object(
+            bucket_name=settings.MINIO_BUCKET_NAME,
+            object_name=object_name,
+            data=io.BytesIO(contents),
+            length=len(contents),
+            content_type=file.content_type or "image/jpeg"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ошибка при загрузке в MinIO: {e}")
+
+    # 4. Формируем ссылку и сохраняем её в БД
+    # Ссылка ведет на порт 9000 (внешний порт MinIO), чтобы фронтенд мог её открыть
+    image_url = f"http://localhost:9000/{settings.MINIO_BUCKET_NAME}/{object_name}"
+    
+    plant.image_url = image_url
+    await db.commit()
+    await db.refresh(plant)
+    
+    return plant

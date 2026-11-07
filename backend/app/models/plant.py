@@ -10,6 +10,7 @@ class Plant(Base):
     name: Mapped[str] = mapped_column(String(100), unique=True)
     description: Mapped[str] = mapped_column(Text) # Лучше Text, если описание длинное
     watering_interval_days: Mapped[int] = mapped_column(Integer)
+    image_url: Mapped[str | None] = mapped_column(String(500), nullable=True) 
 
     # Связь: одно растение из каталога может быть у многих пользователей
     user_plants: Mapped[list["UserPlant"]] = relationship(back_populates="plant")

@@ -1,0 +1,69 @@
+# Убрали version, так как в новых версиях Docker она не нужна
+
+services:
+  # 1. База данных PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: flowery_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: flowery_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flowery_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Бэкенд (FastAPI)
+  backend:
+    build: ./backend
+    container_name: flowery_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgrespassword@db:5432/flowery_db
+      - SECRET_KEY=super-secret-key-for-docker
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - REFRESH_TOKEN_EXPIRE_DAYS=7
+      # Переменные для MinIO:
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET_NAME=flowery-images
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  # 3. Фронтенд (React + Nginx)
+  frontend:
+    build: ./frontend
+    container_name: flowery_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+  
+  # 4. MinIO (Хранилище для картинок)
+  minio:
+    image: pgsty/silo:latest 
+    container_name: flowery_minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres_data:
+  minio_data:
